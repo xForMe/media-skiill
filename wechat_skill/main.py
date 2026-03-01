@@ -18,7 +18,19 @@ from wechat_skill.cover_generator import WeChatCoverGenerator
 from wechat_skill.memory import WeChatMemory
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+def setup_logging():
+    log_dir = "logs"
+    os.makedirs(log_dir, exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(os.path.join(log_dir, "wechat.log"), encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+
+setup_logging()
 logger = logging.getLogger(__name__)
 
 PREVIEW_CONTENT_LENGTH = 500
@@ -145,19 +157,39 @@ def _init_client(args) -> Optional[WeChatClient]:
     return WeChatClient(app_id, app_secret)
 
 def _load_input_data(input_path: str) -> List[dict]:
-    """Load articles from input JSON file."""
-    try:
-        with open(input_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                return data
-            elif isinstance(data, dict) and "articles" in data:
-                return data["articles"]
-            else:
-                return [data]
-    except Exception as e:
-        logger.error(f"Error loading input file: {e}")
-        return []
+    """Load articles from input JSON file or directory of JSON files."""
+    articles = []
+    
+    if os.path.isdir(input_path):
+        import glob
+        logger.info(f"Loading articles from directory: {input_path}")
+        json_files = glob.glob(os.path.join(input_path, "*.json"))
+        for file_path in json_files:
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        articles.extend(data)
+                    elif isinstance(data, dict) and "articles" in data:
+                        articles.extend(data["articles"])
+                    else:
+                        articles.append(data)
+            except Exception as e:
+                logger.error(f"Error loading file {file_path}: {e}")
+    else:
+        try:
+            with open(input_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    articles = data
+                elif isinstance(data, dict) and "articles" in data:
+                    articles = data["articles"]
+                else:
+                    articles = [data]
+        except Exception as e:
+            logger.error(f"Error loading input file: {e}")
+            
+    return articles
 
 def main():
     load_dotenv()
