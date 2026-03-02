@@ -41,8 +41,9 @@ DEFAULT_MCP_URL = f"http://127.0.0.1:{DEFAULT_MCP_PORT}/mcp" # Deprecated
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Process and publish articles to Xiaohongshu")
-    parser.add_argument("--input", required=True, help="Input file (JSON or text)")
-    parser.add_argument("--title", help="Title of the article (if input is text)")
+    parser.add_argument("--input", help="Input file (JSON or text)")
+    parser.add_argument("--content", help="Direct content input (string)")
+    parser.add_argument("--title", help="Title of the article")
     parser.add_argument("--mcp-url", default=DEFAULT_MCP_URL, help="[Deprecated] Xiaohongshu MCP service URL")
     parser.add_argument("--dry-run", action="store_true", help="Generate content only, do not publish")
     parser.add_argument("--mock", action="store_true", help="Mock publication (print only)")
@@ -162,16 +163,24 @@ def process_article(title: str, content: str, args) -> bool:
 def main():
     args = parse_arguments()
 
-    try:
-        articles = read_input_data(args.input, args.title)
-    except FileNotFoundError:
-        logger.error(f"Input file or directory '{args.input}' not found.")
-        return
-    except json.JSONDecodeError:
-        logger.error(f"Failed to parse JSON file '{args.input}'.")
-        return
-    except ValueError as e:
-        logger.error(f"{e}")
+    if args.content:
+        title = args.title or "未命名文章"
+        articles = [(title, args.content)]
+        logger.info(f"Processing content from command line argument (Title: {title})")
+    elif args.input:
+        try:
+            articles = read_input_data(args.input, args.title)
+        except FileNotFoundError:
+            logger.error(f"Input file or directory '{args.input}' not found.")
+            return
+        except json.JSONDecodeError:
+            logger.error(f"Failed to parse JSON file '{args.input}'.")
+            return
+        except ValueError as e:
+            logger.error(f"{e}")
+            return
+    else:
+        logger.error("Error: Either --input or --content must be provided.")
         return
 
     if not articles:

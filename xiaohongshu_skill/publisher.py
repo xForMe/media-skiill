@@ -22,21 +22,18 @@ except ImportError:
     pass
 
 from .models import XiaohongshuNote
-from .memory import XiaohongshuMemory
 
 logger = logging.getLogger(__name__)
 
 class XiaohongshuPublisher:
     """
     Publishes notes to Xiaohongshu via local Playwright automation (xhs-kit).
-    Handles deduplication via XiaohongshuMemory to prevent duplicate posts.
     """
     
-    def __init__(self, headless: bool = True, mock: bool = False, memory_db_path: str = "xiaohongshu_published.db"):
+    def __init__(self, headless: bool = True, mock: bool = False):
         self.headless = headless
         self.mock = mock
         self.client: Optional[XhsClient] = None
-        self.memory = XiaohongshuMemory(db_path=memory_db_path)
         
         # Ensure non-headless mode is allowed if requested
         if not self.headless:
@@ -165,7 +162,6 @@ class XiaohongshuPublisher:
         
         if response.status == "发布完成":
             logger.info("Successfully published to Xiaohongshu.")
-            self.memory.add_record(note.title, note.content)
             return True
         else:
             logger.error(f"Failed to publish: {response.status}")
@@ -191,12 +187,6 @@ class XiaohongshuPublisher:
     async def _publish_async(self, note: XiaohongshuNote) -> bool:
         if self.mock:
             logger.info(f"[MOCK] Would publish note: {note.title}")
-            return True
-
-        # Check if already published
-        if self.memory.is_published(note.title):
-            logger.info(f"Note '{note.title}' already published. Skipping.")
-            print(f"Note '{note.title}' already published. Skipping.")
             return True
 
         try:

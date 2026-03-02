@@ -31,38 +31,24 @@ allowed-tools: WebSearch, WebFetch, Read, Write, Edit, Bash
 ### 步骤1：获取素材
 当用户提供链接或主题时：
 1. 使用 `WebSearch` 或 `WebFetch` 获取原始内容。
-2. 提取核心观点、干货知识点或情感价值点。
+2. 提取核心观点、干货知识点或情感价值点，放到`article.txt`。
 
-### 步骤2：内容转化（Python脚本）
-使用 `xiaohongshu_skill` 中的工具链进行处理。
+### 步骤2：内容转化与发布
 
-**方式一：完全自动化（推荐）**
-直接调用 `main.py` 处理输入文件（JSON或文本）：
+使用 `xiaohongshu_skill` 中的工具链进行处理。推荐使用命令行工具 `main.py`。
+
+运行命令读取文件：
 
 ```bash
-python xiaohongshu_skill/main.py --input article.txt --title "文章标题"
+python xiaohongshu_skill/main.py --input article.txt --title "笔记标题"
 ```
 
 该脚本会自动：
 1. 调用 `ContentGenerator` 将内容改写为小红书风格（Emoji、标签）。
 2. 调用 `CoverGenerator` 生成高对比度文字封面。
-3. 调用 `XiaohongshuPublisher` 发布到 MCP 服务（如果未指定 `--dry-run`）。
-
-**方式二：分步执行（调试用）**
-如果需要人工干预，可以分步调用：
-
-```python
-from xiaohongshu_skill.generator import ContentGenerator
-from xiaohongshu_skill.cover_generator import CoverGenerator
-
-# 1. 生成文案
-gen = ContentGenerator()
-note = gen.generate_note(content, title)
-
-# 2. 生成封面
-cover = CoverGenerator()
-cover_path = cover.generate_cover(note.title, note.tags[0])
-```
+3. 调用 `XiaohongshuPublisher` 发布到小红书（默认行为）。
+   - 如果只想生成不发布，请添加 `--dry-run` 参数。
+   - 如果需要看到浏览器界面（调试/扫码），请添加 `--non-headless` 参数。
 
 ### 步骤3：检查与发布
 - 检查生成的 `output/` 目录下的 JSON 和图片。

@@ -1,0 +1,10 @@
+{
+  "channels": {
+    "xiaohongshu": {
+      "enabled": true,
+      "mode": "dry-run",
+      "input_path": "output/articles",
+      "show_ui": false
+    }
+  }
+}
